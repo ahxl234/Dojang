@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>차량 정비 기록</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f9; }
+    h1 { text-align: center; }
+    .hidden { display: none; }
+    #login { text-align: center; margin-top: 100px; }
+    #login input { padding: 10px; font-size: 16px; }
+    #login button { padding: 10px 20px; font-size: 16px; }
+    #app { max-width: 900px; margin: auto; }
+    form input, form select, form textarea { display:block; margin: 10px 0; padding: 8px; width: 100%; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #eee; }
+    button { margin: 5px; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+
+<div id="login">
+  <h1>🔒 차량 정비 기록</h1>
+  <p>비밀번호를 입력하세요</p>
+  <input type="password" id="passwordInput" placeholder="비밀번호">
+  <button onclick="checkPassword()">로그인</button>
+  <p id="loginMessage" style="color:red;"></p>
+</div>
+
+<div id="app" class="hidden">
+  <h1>차량 정비 기록 관리</h1>
+  <form id="logForm">
+    <input type="date" id="date" required>
+    <select id="status">
+      <option value="입고">입고</option>
+      <option value="출고">출고</option>
+    </select>
+    <input type="text" id="plate" placeholder="차량 번호" required>
+    <input type="text" id="model" placeholder="차종">
+    <input type="text" id="color" placeholder="색상">
+    <textarea id="details" placeholder="정비 내역"></textarea>
+    <input type="number" id="cost" placeholder="비용">
+    <textarea id="memo" placeholder="메모"></textarea>
+    <button type="submit">추가</button>
+  </form>
+
+  <input type="text" id="search" placeholder="검색 (차량번호, 차종, 색상 등)">
+
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>입고일</th>
+        <th>상태</th>
+        <th>차량번호</th>
+        <th>차종</th>
+        <th>색상</th>
+        <th>정비내역</th>
+        <th>비용</th>
+        <th>메모</th>
+        <th>작업</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+  const PASSWORD = "1234"; // 고정 비밀번호
+
+  function checkPassword() {
+    const input = document.getElementById('passwordInput').value;
+    if (input === PASSWORD) {
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+    } else {
+      document.getElementById('loginMessage').innerText = "비밀번호가 틀렸습니다.";
+    }
+  }
+
+  const form = document.getElementById('logForm');
+  const tableBody = document.querySelector('#logTable tbody');
+  const searchInput = document.getElementById('search');
+  let logs = JSON.parse(localStorage.getItem('logs') || '[]');
+
+  function renderLogs() {
+    tableBody.innerHTML = "";
+    const search = searchInput.value.toLowerCase();
+    logs.filter(log =>
+      log.plate.toLowerCase().includes(search) ||
+      log.model.toLowerCase().includes(search) ||
+      log.color.toLowerCase().includes(search) ||
+      log.details.toLowerCase().includes(search) ||
+      log.memo.toLowerCase().includes(search)
+    ).forEach((log, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${log.date}</td>
+        <td>${log.status}</td>
+        <td>${log.plate}</td>
+        <td>${log.model}</td>
+        <td>${log.color}</td>
+        <td>${log.details}</td>
+        <td>${log.cost}</td>
+        <td>${log.memo}</td>
+        <td>
+          <button onclick="deleteLog(${index})">삭제</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+    localStorage.setItem('logs', JSON.stringify(logs));
+  }
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const newLog = {
+      date: document.getElementById('date').value,
+      status: document.getElementById('status').value,
+      plate: document.getElementById('plate').value,
+      model: document.getElementById('model').value,
+      color: document.getElementById('color').value,
+      details: document.getElementById('details').value,
+      cost: document.getElementById('cost').value,
+      memo: document.getElementById('memo').value,
+    };
+    logs.push(newLog);
+    renderLogs();
+    form.reset();
+  });
+
+  function deleteLog(index) {
+    logs.splice(index, 1);
+    renderLogs();
+  }
+
+  searchInput.addEventListener('input', renderLogs);
+  renderLogs();
+</script>
+
+</body>
+</html>
